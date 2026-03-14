@@ -9,16 +9,16 @@ import com.badlogic.gdx.math.Rectangle;
 
 public class PlayerF1 {
     private float x, y;
-    private float width = 50;  // Largeur de ta hitbox (à adapter si besoin)
-    private float height = 100; // Hauteur de ta hitbox (à adapter si besoin)
+    private float width = 50;
+    private float height = 100;
     private Texture texture;
-    private float speed = 400f; // Vitesse de déplacement latéral
+    private float speed = 400f;
 
-    // 💡 NOUVEAU : Les variables pour stocker tes touches personnalisées
+
     private int keyLeft;
     private int keyRight;
 
-    // La boîte mathématique pour les collisions
+
     private Rectangle bounds;
 
     public PlayerF1(float x, float y, Texture texture) {
@@ -27,14 +27,14 @@ public class PlayerF1 {
         this.texture = texture;
         this.bounds = new Rectangle(x, y, width, height);
 
-        // 💡 NOUVEAU : Le pilote lit le fichier de sauvegarde pour connaître ses commandes !
+
         Preferences prefs = Gdx.app.getPreferences("F1RetroRacerPrefs");
-        keyLeft = prefs.getInteger("keyLeft", Input.Keys.LEFT); // Flèche Gauche par défaut
-        keyRight = prefs.getInteger("keyRight", Input.Keys.RIGHT); // Flèche Droite par défaut
+        keyLeft = prefs.getInteger("keyLeft", Input.Keys.LEFT);
+        keyRight = prefs.getInteger("keyRight", Input.Keys.RIGHT);
     }
 
     public void update(float delta) {
-        // 💡 NOUVEAU : On utilise tes variables au lieu des touches écrites "en dur"
+
         if (Gdx.input.isKeyPressed(keyLeft)) {
             x -= speed * delta;
         }

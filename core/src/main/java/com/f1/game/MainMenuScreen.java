@@ -36,7 +36,7 @@ public class MainMenuScreen extends ScreenAdapter {
     private int selectedPlayer = 0;
     private int selectedRival = 1;
 
-    // 💡 La variable de luminosité déclarée au bon endroit
+
     private float brightness;
 
     public MainMenuScreen(F1Game game) {
@@ -142,14 +142,14 @@ public class MainMenuScreen extends ScreenAdapter {
             return;
         }
 
-        // Application de la luminosité au fond
+
         Gdx.gl.glClearColor(0.12f * brightness, 0.12f * brightness, 0.15f * brightness, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         camera.update();
         batch.setProjectionMatrix(camera.combined);
 
-        // Application de la luminosité aux textures
+
         batch.setColor(brightness, brightness, brightness, 1f);
 
         batch.begin();

@@ -57,7 +57,6 @@ public class GameScreen extends ScreenAdapter {
     private int keyLeft;
     private int keyRight;
     private int keyBoost;
-    // 💡 La variable de luminosité
     private float brightness;
 
     public GameScreen(F1Game game, String playerTextureName, String rivalTextureName) {
@@ -93,7 +92,6 @@ public class GameScreen extends ScreenAdapter {
         prefs = Gdx.app.getPreferences("F1RetroRacerPrefs");
         highScore = prefs.getInteger("highscore", 0);
 
-        // 💡 Lecture de la sauvegarde dans le constructeur
         brightness = prefs.getFloat("brightness", 1.0f);
         keyLeft = prefs.getInteger("keyLeft", Input.Keys.LEFT);
         keyRight = prefs.getInteger("keyRight", Input.Keys.RIGHT);
@@ -185,7 +183,6 @@ public class GameScreen extends ScreenAdapter {
             }
         }
 
-        // Application de la luminosité au fond de la route
         Gdx.gl.glClearColor(0.15f * brightness, 0.15f * brightness, 0.15f * brightness, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
@@ -236,7 +233,6 @@ public class GameScreen extends ScreenAdapter {
             Gdx.gl.glDisable(GL20.GL_BLEND);
 
             batch.begin();
-            // On remet une couleur forte pour le Game Over pour qu'il soit bien lisible
             font.setColor(Color.RED);
             font.getData().setScale(3);
             font.draw(batch, "CRASH !", WORLD_WIDTH / 2f - 85, WORLD_HEIGHT / 2f + 100);

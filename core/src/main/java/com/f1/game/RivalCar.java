@@ -11,7 +11,7 @@ public class RivalCar {
     private Texture texture;
     private float speed;
 
-    // 💡 La fameuse boîte de collision !
+
     private Rectangle bounds;
 
     public RivalCar(float x, float y, Texture texture, float speed) {
@@ -25,7 +25,7 @@ public class RivalCar {
     public void setPosition(float x, float y) {
         this.x = x;
         this.y = y;
-        // On déplace la boîte avec la voiture
+
         this.bounds.setPosition(x, y);
     }
 
@@ -37,7 +37,7 @@ public class RivalCar {
     public float getY() { return y; }
     public float getSpeed() { return speed; }
 
-    // 💡 La méthode que ton PlayerF1 cherchait !
+
     public Rectangle getBounds() {
         return bounds;
     }

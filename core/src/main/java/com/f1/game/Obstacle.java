@@ -6,11 +6,11 @@ import com.badlogic.gdx.math.Rectangle;
 
 public class Obstacle {
     private float x, y;
-    private float width = 40;  // Largeur de l'obstacle
-    private float height = 40; // Hauteur de l'obstacle
+    private float width = 40;
+    private float height = 40;
     private Texture texture;
 
-    // 💡 La boîte de collision
+
     private Rectangle bounds;
 
     public Obstacle(float x, float y, Texture texture) {
@@ -22,7 +22,7 @@ public class Obstacle {
 
     public void scroll(float amount) {
         this.y -= amount;
-        // On descend la boîte en même temps que l'image
+
         this.bounds.setPosition(x, y);
     }
 
