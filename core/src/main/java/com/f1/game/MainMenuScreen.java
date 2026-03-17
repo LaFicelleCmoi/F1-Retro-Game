@@ -36,7 +36,6 @@ public class MainMenuScreen extends ScreenAdapter {
     private int selectedPlayer = 0;
     private int selectedRival = 1;
 
-
     private float brightness;
 
     public MainMenuScreen(F1Game game) {
@@ -55,13 +54,14 @@ public class MainMenuScreen extends ScreenAdapter {
         uiConfirm = new Texture("ui_confirm.png");
         uiOptions = new Texture("ui_options.png");
 
-        carCards = new Texture[4];
-        carCards[0] = new Texture("card_alpine.png");
-        carCards[1] = new Texture("card_mclaren.png");
-        carCards[2] = new Texture("card_ferrari.png");
-        carCards[3] = new Texture("card_redbull.png");
 
-        // 💡 Lecture de la sauvegarde dans le constructeur
+        carCards = new Texture[] {
+            new Texture("card_alpine.png"),
+            new Texture("card_mclaren.png"),
+            new Texture("card_ferrari.png"),
+            new Texture("card_redbull.png")
+        };
+
         Preferences prefs = Gdx.app.getPreferences("F1RetroRacerPrefs");
         brightness = prefs.getFloat("brightness", 1.0f);
     }
@@ -142,14 +142,11 @@ public class MainMenuScreen extends ScreenAdapter {
             return;
         }
 
-
         Gdx.gl.glClearColor(0.12f * brightness, 0.12f * brightness, 0.15f * brightness, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         camera.update();
         batch.setProjectionMatrix(camera.combined);
-
-
         batch.setColor(brightness, brightness, brightness, 1f);
 
         batch.begin();

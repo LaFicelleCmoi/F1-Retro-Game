@@ -22,42 +22,26 @@ public class GameScreen extends ScreenAdapter {
     private SpriteBatch batch;
     private ShapeRenderer shapeRenderer;
     private BitmapFont font;
-
     private OrthographicCamera camera;
     private Viewport viewport;
+
     public static final float WORLD_WIDTH = 480f;
     public static final float WORLD_HEIGHT = 800f;
 
     private PlayerF1 player;
-    private List<RivalCar> rivals;
-    private List<Obstacle> obstacles;
-    private List<RivalCar> scoredRivals;
+    private List<RivalCar> rivals = new ArrayList<>();
+    private List<Obstacle> obstacles = new ArrayList<>();
 
-    private Texture playerTex;
-    private Texture rivalTex;
-    private Texture obstacleTex;
-
+    private Texture playerTex, rivalTex, obstacleTex;
     private Texture[] startLightsTex;
+
     private int startPhase = 0;
-    private float startTimer = 0;
-    private boolean isRaceStarted = false;
-    private float gantryY;
-
-    private float spawnTimer = 0;
-    private float roadOffset = 0;
-
-    private float score = 0;
-    private int highScore = 0;
-    private Preferences prefs;
-
-    private float bonusTimer = 0;
+    private float startTimer = 0, gantryY, spawnTimer = 0, roadOffset = 0, score = 0, bonusTimer = 0, brightness;
+    private boolean isRaceStarted = false, isGameOver = false;
     private String bonusText = "";
 
-    private boolean isGameOver = false;
-    private int keyLeft;
-    private int keyRight;
-    private int keyBoost;
-    private float brightness;
+    private int highScore, keyBoost;
+    private Preferences prefs;
 
     public GameScreen(F1Game game, String playerTextureName, String rivalTextureName) {
         this.game = game;
@@ -73,29 +57,19 @@ public class GameScreen extends ScreenAdapter {
         rivalTex = new Texture(rivalTextureName);
         obstacleTex = new Texture("obstacle.png");
 
-        startLightsTex = new Texture[7];
-        startLightsTex[0] = new Texture("gantry_empty.png");
-        startLightsTex[1] = new Texture("start_1.png");
-        startLightsTex[2] = new Texture("start_2.png");
-        startLightsTex[3] = new Texture("start_3.png");
-        startLightsTex[4] = new Texture("start_4.png");
-        startLightsTex[5] = new Texture("start_5.png");
-        startLightsTex[6] = new Texture("start_go.png");
-
-        gantryY = WORLD_HEIGHT - 150;
-
-        player = new PlayerF1(WORLD_WIDTH / 2f - 25, 50, playerTex);
-        rivals = new ArrayList<>();
-        obstacles = new ArrayList<>();
-        scoredRivals = new ArrayList<>();
+        startLightsTex = new Texture[]{
+            new Texture("gantry_empty.png"), new Texture("start_1.png"),
+            new Texture("start_2.png"), new Texture("start_3.png"),
+            new Texture("start_4.png"), new Texture("start_5.png"),
+            new Texture("start_go.png")
+        };
 
         prefs = Gdx.app.getPreferences("F1RetroRacerPrefs");
         highScore = prefs.getInteger("highscore", 0);
-
         brightness = prefs.getFloat("brightness", 1.0f);
-        keyLeft = prefs.getInteger("keyLeft", Input.Keys.LEFT);
-        keyRight = prefs.getInteger("keyRight", Input.Keys.RIGHT);
         keyBoost = prefs.getInteger("keyBoost", Input.Keys.UP);
+
+        restartGame(); // On utilise directement restart pour ne pas réécrire le code !
     }
 
     @Override
@@ -105,76 +79,53 @@ public class GameScreen extends ScreenAdapter {
 
     @Override
     public void render(float delta) {
-
         if (!isRaceStarted) {
             startTimer += delta;
             if (startTimer > 0.8f) {
                 startTimer = 0;
-                startPhase++;
-                if (startPhase == 6) {
-                    isRaceStarted = true;
-                }
+                if (++startPhase == 6) isRaceStarted = true;
             }
-        }
-        else if (!isGameOver) {
-            player.update(delta);
+        } else if (!isGameOver) {
+            player.update(delta); // Le joueur gère lui-même ses limites grâce à Math.min et Math.max
 
-            if (player.getX() < 0) player.setPosition(0, player.getY());
-            if (player.getX() > WORLD_WIDTH - 50) player.setPosition(WORLD_WIDTH - 50, player.getY());
-
-            float currentSpeed = 400f;
-            if (Gdx.input.isKeyPressed(keyBoost)) {
-                currentSpeed = 800f;
-            }
-
+            float currentSpeed = Gdx.input.isKeyPressed(keyBoost) ? 800f : 400f;
             score += (currentSpeed / 100f) * delta;
 
-            roadOffset -= currentSpeed * delta;
-            if (roadOffset <= -100) roadOffset += 100;
-
-            if (gantryY > -200) {
-                gantryY -= currentSpeed * delta;
-            }
+            roadOffset = (roadOffset - currentSpeed * delta) % 100; // Plus besoin de if !
+            if (gantryY > -200) gantryY -= currentSpeed * delta;
 
             spawnTimer += delta;
-            float spawnRate = currentSpeed == 800f ? 0.7f : 1.5f;
-            if (spawnTimer > spawnRate) {
-                if (Math.random() < 0.3) spawnObstacle();
-                else spawnRival();
+            if (spawnTimer > (currentSpeed == 800f ? 0.7f : 1.5f)) {
+                if (Math.random() < 0.3) obstacles.add(new Obstacle((float)(Math.random() * (WORLD_WIDTH - 50)), WORLD_HEIGHT + 50, obstacleTex));
+                else rivals.add(new RivalCar((float)(Math.random() * (WORLD_WIDTH - 50)), WORLD_HEIGHT + 50, rivalTex, 200f));
                 spawnTimer = 0;
             }
 
-            for (int i = rivals.size() - 1; i >= 0; i--) {
-                RivalCar rival = rivals.get(i);
-                rival.setPosition(rival.getX(), rival.getY() - (rival.getSpeed() + currentSpeed - 400f) * delta);
+            for (RivalCar rival : rivals) {
+                rival.scroll(currentSpeed, delta);
+                if (player.isCollidingWith(rival)) triggerGameOver();
 
-                if (player.isCollidingWith(rival)) {
-                    triggerGameOver();
-                }
-                else if (rival.getY() < player.getY() && !scoredRivals.contains(rival)) {
-                    scoredRivals.add(rival);
-                    float distX = Math.abs(player.getX() - rival.getX());
-                    if (distX < 85) {
+                // ⬅️ NOUVEAU : On utilise la fonction 'isScored()' plutôt qu'une Liste !
+                if (rival.getY() < player.getY() && !rival.isScored()) {
+                    rival.setScored(true);
+                    if (Math.abs(player.getX() - rival.getX()) < 85) {
                         score += 500;
                         bonusTimer = 1.0f;
                         bonusText = "DEPASSEMENT RISQUE ! +500";
                     }
                 }
-
-                if (rival.getY() < -100) {
-                    scoredRivals.remove(rival);
-                    rivals.remove(i);
-                }
             }
 
-            for (int i = obstacles.size() - 1; i >= 0; i--) {
-                Obstacle obs = obstacles.get(i);
-                obs.scroll(currentSpeed * delta);
+            for (Obstacle obs : obstacles) {
+                obs.scroll(currentSpeed, delta);
                 if (player.isCollidingWith(obs)) triggerGameOver();
-                if (obs.getY() < -100) obstacles.remove(i);
             }
-        }
-        else {
+
+
+            rivals.removeIf(r -> r.getY() < -100);
+            obstacles.removeIf(o -> o.getY() < -100);
+
+        } else {
             if (Gdx.input.isKeyJustPressed(Input.Keys.R)) restartGame();
             if (Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
                 game.setScreen(new MainMenuScreen(game));
@@ -183,21 +134,22 @@ public class GameScreen extends ScreenAdapter {
             }
         }
 
+        drawGame(delta);
+    }
+
+
+    private void drawGame(float delta) {
         Gdx.gl.glClearColor(0.15f * brightness, 0.15f * brightness, 0.15f * brightness, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
         camera.update();
-        batch.setProjectionMatrix(camera.combined);
-        shapeRenderer.setProjectionMatrix(camera.combined);
 
+        shapeRenderer.setProjectionMatrix(camera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(Color.WHITE);
-        for (int i = 0; i < 15; i++) {
-            shapeRenderer.rect(WORLD_WIDTH / 2f - 5, roadOffset + (i * 100), 10, 50);
-        }
+        for (int i = 0; i < 15; i++) shapeRenderer.rect(WORLD_WIDTH / 2f - 5, roadOffset + (i * 100), 10, 50);
         shapeRenderer.end();
 
-        // Application de la luminosité à toutes les textures (voitures, obstacles...)
+        batch.setProjectionMatrix(camera.combined);
         batch.setColor(brightness, brightness, brightness, 1f);
         batch.begin();
 
@@ -205,9 +157,7 @@ public class GameScreen extends ScreenAdapter {
         for (RivalCar rival : rivals) rival.draw(batch);
         for (Obstacle obs : obstacles) obs.draw(batch);
 
-        if (gantryY > -200) {
-            batch.draw(startLightsTex[Math.min(startPhase, 6)], WORLD_WIDTH / 2f - 200, gantryY, 400, 150);
-        }
+        if (gantryY > -200) batch.draw(startLightsTex[Math.min(startPhase, 6)], WORLD_WIDTH / 2f - 200, gantryY, 400, 150);
 
         if (bonusTimer > 0) {
             bonusTimer -= delta;
@@ -225,7 +175,6 @@ public class GameScreen extends ScreenAdapter {
         if (isGameOver) {
             Gdx.gl.glEnable(GL20.GL_BLEND);
             Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             shapeRenderer.setColor(new Color(0, 0, 0, 0.75f));
             shapeRenderer.rect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
@@ -236,7 +185,6 @@ public class GameScreen extends ScreenAdapter {
             font.setColor(Color.RED);
             font.getData().setScale(3);
             font.draw(batch, "CRASH !", WORLD_WIDTH / 2f - 85, WORLD_HEIGHT / 2f + 100);
-
             font.setColor(Color.WHITE);
             font.getData().setScale(1.2f);
             font.draw(batch, "Score final : " + (int)score, WORLD_WIDTH / 2f - 90, WORLD_HEIGHT / 2f + 40);
@@ -244,16 +192,6 @@ public class GameScreen extends ScreenAdapter {
             font.draw(batch, "[ ECHAP ] - Retour Menu", WORLD_WIDTH / 2f - 110, WORLD_HEIGHT / 2f - 50);
             batch.end();
         }
-    }
-
-    private void spawnRival() {
-        float randomX = (float) (Math.random() * (WORLD_WIDTH - 50));
-        rivals.add(new RivalCar(randomX, WORLD_HEIGHT + 50, rivalTex, 200f));
-    }
-
-    private void spawnObstacle() {
-        float randomX = (float) (Math.random() * (WORLD_WIDTH - 50));
-        obstacles.add(new Obstacle(randomX, WORLD_HEIGHT + 50, obstacleTex));
     }
 
     private void triggerGameOver() {
@@ -268,30 +206,18 @@ public class GameScreen extends ScreenAdapter {
     private void restartGame() {
         rivals.clear();
         obstacles.clear();
-        scoredRivals.clear();
-        player.setPosition(WORLD_WIDTH / 2f - 25, 50);
-        isGameOver = false;
-
-        isRaceStarted = false;
+        if(player == null) player = new PlayerF1(WORLD_WIDTH / 2f - 25, 50, playerTex);
+        else player.setPosition(WORLD_WIDTH / 2f - 25, 50);
+        isGameOver = isRaceStarted = false;
         startPhase = 0;
-        startTimer = 0;
+        startTimer = spawnTimer = score = bonusTimer = 0;
         gantryY = WORLD_HEIGHT - 150;
-
-        bonusTimer = 0;
-        spawnTimer = 0;
-        score = 0;
     }
 
     @Override
     public void dispose() {
-        batch.dispose();
-        shapeRenderer.dispose();
-        font.dispose();
-        playerTex.dispose();
-        rivalTex.dispose();
-        obstacleTex.dispose();
-        for(Texture t : startLightsTex) {
-            t.dispose();
-        }
+        batch.dispose(); shapeRenderer.dispose(); font.dispose();
+        playerTex.dispose(); rivalTex.dispose(); obstacleTex.dispose();
+        for(Texture t : startLightsTex) t.dispose();
     }
 }

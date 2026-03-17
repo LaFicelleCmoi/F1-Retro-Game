@@ -1,5 +1,6 @@
 package com.f1.game;
 
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Preferences;
@@ -19,6 +20,7 @@ public class OptionsScreen extends ScreenAdapter {
     private F1Game game;
     private SpriteBatch batch;
     private ShapeRenderer shapeRenderer;
+    private BitmapFont font;
     private OrthographicCamera camera;
     private Viewport viewport;
 

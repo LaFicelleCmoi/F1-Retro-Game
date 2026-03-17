@@ -1,44 +1,21 @@
 package com.f1.game;
 
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.math.Rectangle;
 
-public class RivalCar {
-    private float x, y;
-    private float width = 50;  // Largeur de l'adversaire
-    private float height = 100; // Hauteur de l'adversaire
-    private Texture texture;
-    private float speed;
-
-
-    private Rectangle bounds;
+public class RivalCar extends Vehicle {
+    private boolean scored = false;
 
     public RivalCar(float x, float y, Texture texture, float speed) {
-        this.x = x;
-        this.y = y;
-        this.texture = texture;
-        this.speed = speed;
-        this.bounds = new Rectangle(x, y, width, height);
+        super(x, y, 50, 100, texture, speed);
     }
 
-    public void setPosition(float x, float y) {
-        this.x = x;
-        this.y = y;
-
-        this.bounds.setPosition(x, y);
+    public void scroll(float playerSpeed, float delta) {
+        setPosition(getX(), getY() - (getSpeed() + playerSpeed - 400f) * delta);
     }
 
-    public void draw(SpriteBatch batch) {
-        batch.draw(texture, x, y, width, height);
-    }
+    public boolean isScored() { return scored; }
+    public void setScored(boolean scored) { this.scored = scored; }
 
-    public float getX() { return x; }
-    public float getY() { return y; }
-    public float getSpeed() { return speed; }
-
-
-    public Rectangle getBounds() {
-        return bounds;
-    }
+    @Override
+    public void update(float delta) {}
 }
